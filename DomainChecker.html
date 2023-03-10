@@ -1,0 +1,160 @@
+<!--
+ * DomainChecker - 批量检测域名是否可以正常访问的工具
+ * 作者：Lucifiel
+ * 日期：2023年3月10日
+ -->
+<html>
+<head>
+	<title>DomainChecker - 批量检测域名存活</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+	<style>
+		body{
+			font-family:Arial,Helvetica,sans-serif;
+		}
+		h1{
+			text-align:center;
+		}
+		.container{
+			width:60%;
+			margin:0 auto;
+			border:1px solid #eee;
+			padding:20px;
+		}
+		.input-box{
+			display:flex;
+			flex-direction:column;
+			margin-bottom:20px;
+		}
+		.input-box label{
+			margin-bottom:5px;
+		}
+		.input-box input{
+			padding:10px;
+			border:1px solid #ccc;
+			border-radius:5px;
+			margin-bottom:10px;
+		}
+		.input-box .btn{
+			padding:10px 20px;
+			background-color:#4CAF50;
+			color:#fff;
+			border:none;
+			border-radius:5px;
+			cursor:pointer;
+		}
+		.result{
+			margin-top:20px;
+			display:none;
+		}
+		.result h2{
+			margin:0;
+		}
+		.result .row{
+			display:flex;
+			align-items:center;
+			margin-bottom:10px;
+		}
+		.result .row .domain{
+			flex:1;
+			font-weight:bold;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			margin-right: 10px;
+		}
+		.result .row .status{
+			flex:1;
+		}
+		.result .row .btn{
+			padding:5px 10px;
+			background-color:#4CAF50;
+			color:#fff;
+			border:none;
+			border-radius:5px;
+			cursor:pointer;
+		}
+		.spinner {
+			display: inline-block;
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			border: 3px solid rgba(0, 0, 0, 0.1);
+			border-left-color: #4CAF50;
+			animation: spin 0.8s linear infinite;
+		}
+		@keyframes spin {
+			to { transform: rotate(360deg); }
+		}
+		.status-can{
+			color:green;
+		}
+		.status-cannot{
+			color:red;
+		}
+	</style>
+</head>
+<body>
+	<h1>批量检测域名是否可以正常访问的工具</h1>
+	<div class="container">
+		<div class="input-box">
+			<label for="domains">待检测域名（每行一个）：</label>
+			<textarea id="domains" rows="10"></textarea>
+			<button class="btn" id="check-btn">开始检测</button>
+		</div>
+		<div class="result">
+			<h2>检测结果</h2>
+		</div>
+	</div>
+
+	<script>
+		const checkBtn=document.querySelector('#check-btn');
+		const domainsInput=document.querySelector('#domains');
+		const resultContainer=document.querySelector('.result');
+
+		checkBtn.addEventListener('click',checkDomains);
+
+		function checkDomains(){
+			resultContainer.innerHTML='<h2>检测结果</h2>';
+			resultContainer.style.display='block';
+
+			const domains=domainsInput.value.split('\n');
+			for(let i=0;i<domains.length;i++){
+				const domain=domains[i].trim();
+				if(domain==='')continue;
+				const row=document.createElement('div');
+				row.classList.add('row');
+				row.innerHTML=`
+					<div class="domain">${domain}</div>
+					<div class="status"><i class="fa fa-spinner fa-spin"></i> 正在检测...</div>
+				`;
+				resultContainer.appendChild(row);
+				checkDomainStatus(domain,row);
+			}
+		}
+		function checkDomainStatus(domain, row) {
+		  const img = new Image();
+		  let timeoutId = setTimeout(function () {
+			row.querySelector('.status').innerHTML = '<span style="color:#FFC107">检测超时</span>';
+		  }, 10000); // 设置超时时间为10秒
+
+		  img.onload = function () {
+			clearTimeout(timeoutId);
+			row.querySelector('.status').innerHTML = '<span style="color:green">可以访问</span>';
+		  };
+		  img.onerror = function () {
+			clearTimeout(timeoutId);
+			row.querySelector('.status').innerHTML = '<span style="color:red">无法访问</span>';
+		  };
+
+		  // 添加http或https以及端口号
+		  const url = new URL(domain);
+		  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+			return;
+		  }
+		  const domainWithoutPathname = url.protocol + '//' + url.hostname + (url.port ? ":" + url.port : "");
+		  img.src = `${domainWithoutPathname}/favicon.ico`;
+		}
+	</script>
+</body>
+</html>
